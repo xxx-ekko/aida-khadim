@@ -182,10 +182,10 @@
 
         /* SECTIONS */
         section {
-            padding: 90px 24px;
-            max-width: 960px;
-            margin: 0 auto
-        }
+    padding: 80px 24px;
+    max-width: 960px;
+    margin: 0 auto;
+}
 
         .eyebrow {
             font-size: 9px;
@@ -848,3 +848,21 @@
 /* CUSTOM ROUNDED STYLES */
 .map-wrap iframe { border-radius: 12px; }
 .map-btn, .pbtn, .sbtn, .fbtn, button, .lb-prev, .lb-next, .lb-close { border-radius: 30px !important; }
+
+
+/* Section Spacing Adjustments */
+#localisation {
+    background: var(--cream);
+}
+#galerie {
+    padding: 80px 0;
+}
+
+@media (max-width: 768px) {
+    section {
+        padding: 50px 24px;
+    }
+    #galerie {
+        padding: 50px 0;
+    }
+}
