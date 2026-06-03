@@ -20,9 +20,7 @@
         <a href="#galerie">Galerie</a>
         <a href="#localisation">Lieu</a>
         <a href="#rsvp">RSVP</a>
-        <a href="#invites">Invités</a>
-        <a href="#messages">Messages</a>
-    </nav>
+        </nav>
 
     <!-- LIGHTBOX -->
     <div class="lightbox" id="lb">
@@ -65,7 +63,7 @@
                         Juillet 2026</p>
                     <p
                         style="font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:var(--dark);margin-top:8px">
-                        De 20h00 à 01h du matin</p>
+                        De 20h00 à 01h</p>
                 </div>
             </div>
         </section>
@@ -87,8 +85,8 @@
     <div id="localisation">
         <section style="background:var(--cream);max-width:100%;padding:90px 24px">
             <div style="max-width:760px;margin:0 auto">
-                <p class="eyebrow">Comment nous rejoindre</p>
-                <h2 class="stitle">Le Lieu</h2>
+                <p class="eyebrow">Le Lieu</p>
+                <h2 class="stitle">Salle Ernam Yoff</h2>
                 <div class="map-wrap">
                     <iframe
                         src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3859.5!2d-17.4441!3d14.6928!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMTTCsDQxJzM0LjEiTiAxN8KwMjYnMzguOCJX!5e0!3m2!1sfr!2ssn!4v1"
@@ -118,8 +116,6 @@
                             <button class="pbtn" id="pno" onclick="setP('no')">✗ Je ne pourrai pas</button>
                         </div>
                     </div>
-                    <div class="field"><label>Vos mots de cœur (optionnel)</label><textarea id="rmsg"
-                            placeholder="Un mot pour les mariés…"></textarea></div>
                     <button class="sbtn" onclick="submitRsvp()">Envoyer ma réponse</button>
                 </div>
                 <div class="rsvp-ok" id="rsvp-ok">
@@ -129,56 +125,6 @@
                         Merci pour votre réponse !</p>
                     <p style="font-size:13px;color:var(--muted)">Nous avons bien reçu votre confirmation.</p>
                 </div>
-            </div>
-        </section>
-    </div>
-
-    <!-- INVITÉS -->
-    <div id="invites">
-        <section style="background:var(--cream);max-width:100%;padding:90px 24px">
-            <div style="max-width:960px;margin:0 auto">
-                <p class="eyebrow">En temps réel</p>
-                <h2 class="stitle">Les Invités</h2>
-                <div class="stats-row">
-                    <div class="stat">
-                        <div class="stat-n" id="cnt-total">0</div>
-                        <div class="stat-l">Invités</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-n" id="cnt-yes" style="color:#7ec98e">0</div>
-                        <div class="stat-l">Confirmés</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-n" id="cnt-wait" style="color:var(--gold)">0</div>
-                        <div class="stat-l">En attente</div>
-                    </div>
-                </div>
-                <div class="filters">
-                    <button class="fbtn active" onclick="filt('all',this)">Tous</button>
-                    <button class="fbtn" onclick="filt('yes',this)">Confirmés</button>
-                    <button class="fbtn" onclick="filt('no',this)">Absents</button>
-                </div>
-                <div class="guest-list" id="guest-list"></div>
-            </div>
-        </section>
-    </div>
-
-    <!-- MESSAGES -->
-    <div id="messages">
-        <section>
-            <p class="eyebrow">Vos mots de cœur</p>
-            <h2 class="stitle">Messages</h2>
-            <div class="msgs-wrap">
-                <div class="msg-list" id="msg-list"></div>
-                <p class="form-title">Laisser un message</p>
-                <div class="form-row2">
-                    <div class="field"><label>Prénom</label><input type="text" id="mprenom" placeholder="Votre prénom">
-                    </div>
-                    <div class="field"><label>Nom</label><input type="text" id="mnom" placeholder="Votre nom"></div>
-                </div>
-                <div class="field"><label>Votre message</label><textarea id="mtxt"
-                        placeholder="Vos vœux, pensées, anecdotes…" style="min-height:120px"></textarea></div>
-                <button class="sbtn" onclick="submitMsg()">Publier mon message</button>
             </div>
         </section>
     </div>
@@ -267,17 +213,9 @@
             if (!p || !n) { toast('Veuillez entrer votre prénom et nom.'); return; }
             if (!presence) { toast('Veuillez indiquer votre présence.'); return; }
             const nb = 1;
-            const m = document.getElementById('rmsg').value.trim();
             const entry = { prenom: p, nom: n, nb, status: presence === 'yes' ? 'yes' : 'no', time: timeStr() };
             guests.unshift(entry);
             saveGuests(guests);
-            if (m) {
-                const mEntry = { prenom: p, nom: n, txt: m, time: timeStr() };
-                msgs.unshift(mEntry);
-                saveMsgs(msgs);
-                renderMsgs();
-            }
-            renderGuests();
             document.getElementById('rsvp-form').style.display = 'none';
             document.getElementById('rsvp-ok').style.display = 'block';
             toast(presence === 'yes' ? '🎉 Présence confirmée !' : 'Merci pour votre réponse.');
@@ -304,8 +242,7 @@
         function filt(f, btn) {
             gFilter = f;
             document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active'); renderGuests();
-        }
+            btn.classList.add('active'); }
 
         // ---- MESSAGES ----
         function renderMsgs() {
@@ -328,7 +265,6 @@
             if (!p || !n || !t) { toast('Veuillez remplir tous les champs.'); return; }
             msgs.unshift({ prenom: p, nom: n, txt: t, time: timeStr() });
             saveMsgs(msgs);
-            renderMsgs();
             document.getElementById('mprenom').value = '';
             document.getElementById('mnom').value = '';
             document.getElementById('mtxt').value = '';
@@ -351,9 +287,7 @@
 
         // ---- INIT ----
         buildGallery();
-        renderGuests();
-        renderMsgs();
-    </script>
+        </script>
 </body>
 
 </html>
