@@ -1,7 +1,6 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,24 +9,31 @@ const PORT = process.env.PORT || 3000;
 app.use(cors()); // Allow cross-origin requests (important for GitHub Pages)
 app.use(express.json());
 
-// Initialize SQLite Database
-const dbPath = path.join(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error opening database', err);
-    } else {
-        console.log('Connected to SQLite database.');
-        // Create guests table if it doesn't exist
-        db.run(`CREATE TABLE IF NOT EXISTS guests (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            prenom TEXT NOT NULL,
-            nom TEXT NOT NULL,
-            presence TEXT NOT NULL,
-            message TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
+// Initialize PostgreSQL Database
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false // Required for Supabase / Render PostgreSQL
     }
 });
+
+// Create guests table if it doesn't exist
+const initDb = async () => {
+    try {
+        await pool.query(`CREATE TABLE IF NOT EXISTS guests (
+            id SERIAL PRIMARY KEY,
+            prenom VARCHAR(255) NOT NULL,
+            nom VARCHAR(255) NOT NULL,
+            presence VARCHAR(50) NOT NULL,
+            message TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+        console.log('Connected to PostgreSQL and guests table is ready.');
+    } catch (err) {
+        console.error('Error initializing database', err);
+    }
+};
+initDb();
 
 // API Endpoints
 
@@ -39,39 +45,43 @@ app.post('/api/guests', (req, res) => {
         return res.status(400).json({ error: 'Prenom, nom, and presence are required.' });
     }
     
-    const stmt = db.prepare('INSERT INTO guests (prenom, nom, presence, message) VALUES (?, ?, ?, ?)');
-    stmt.run([prenom, nom, presence, message || ''], function(err) {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.status(201).json({ id: this.lastID, message: 'RSVP saved successfully.' });
-    });
-    stmt.finalize();
+    try {
+        const result = await pool.query(
+            'INSERT INTO guests (prenom, nom, presence, message) VALUES ($1, $2, $3, $4) RETURNING id',
+            [prenom, nom, presence, message || '']
+        );
+        res.status(201).json({ id: result.rows[0].id, message: 'RSVP saved successfully.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // 2. Get all guests (For the admin backoffice)
-app.get('/api/guests', (req, res) => {
+app.get('/api/guests', async (req, res) => {
     const { pwd } = req.query;
     if (pwd !== 'AidaKhadim2026') {
         return res.status(401).json({ error: 'Accès refusé. Mot de passe incorrect.' });
     }
 
-    db.all('SELECT * FROM guests ORDER BY timestamp DESC', [], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(rows);
-    });
+    try {
+        const result = await pool.query('SELECT * FROM guests ORDER BY timestamp DESC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // 3. Get all messages (For the public site display)
-app.get('/api/messages', (req, res) => {
-    db.all("SELECT prenom, message, timestamp FROM guests WHERE message != '' ORDER BY timestamp DESC", [], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(rows);
-    });
+app.get('/api/messages', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT prenom, message, timestamp FROM guests WHERE message != '' AND message IS NOT NULL ORDER BY timestamp DESC");
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Start Server
