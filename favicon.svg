@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Coeur couleur Or -->
+  <path d="M 50,85 C 50,85 10,55 10,30 C 10,10 40,10 50,30 C 60,10 90,10 90,30 C 90,55 50,85 50,85 Z" fill="#C9A86A" />
+  
+  <!-- Texte A & K au centre -->
+  <text x="50" y="42" font-family="'Georgia', serif" font-size="22" font-style="italic" fill="#ffffff" text-anchor="middle" dominant-baseline="central">A &amp; K</text>
+</svg>

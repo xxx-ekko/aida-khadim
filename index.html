@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Aïda & Khadim — Mariage</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400;1,600&family=Jost:wght@200;300;400;500&display=swap"
         rel="stylesheet">
@@ -171,25 +172,7 @@
         const LS_GUESTS = 'mariage_ak_guests';
         const LS_MSGS = 'mariage_ak_msgs';
 
-        // ---- PERSISTANCE localStorage ----
-        function loadGuests() {
-            try { return JSON.parse(localStorage.getItem(LS_GUESTS)) || []; } catch { return []; }
-        }
-        function saveGuests(arr) {
-            try { localStorage.setItem(LS_GUESTS, JSON.stringify(arr)); } catch { }
-        }
-        function loadMsgs() {
-            try { return JSON.parse(localStorage.getItem(LS_MSGS)) || []; } catch { return []; }
-        }
-        function saveMsgs(arr) {
-            try { localStorage.setItem(LS_MSGS, JSON.stringify(arr)); } catch { }
-        }
-
-        let guests = loadGuests();
-        let msgs = loadMsgs();
-        let gFilter = 'all';
         let presence = null;
-
         function ini(p, n) { return ((p || '')[0] || '').toUpperCase() + ((n || '')[0] || '').toUpperCase(); }
         function timeStr() {
             return new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
