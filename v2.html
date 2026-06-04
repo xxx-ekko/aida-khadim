@@ -10,6 +10,11 @@
     <script src="photos.js"></script>
 </head>
 <body>
+    <!-- SPLASH SCREEN -->
+    <div class="splash">
+        <img src="favicon.svg" alt="Aïda & Khadim Logo">
+        <h2>Notre Grand Jour</h2>
+    </div>
 
     <!-- NAVIGATION -->
     <nav class="nav" id="nav">
@@ -26,6 +31,7 @@
         <div class="hero-content reveal">
             <h1>Aïda & Khadim</h1>
             <p>12 Décembre 2026</p>
+            <a href="#rsvp" class="btn btn-hero">Confirmer ma présence</a>
         </div>
     </header>
 
@@ -37,8 +43,25 @@
         </div>
     </section>
 
+    <!-- LE LIEU ET L'HEURE -->
+    <section class="section" id="infos">
+        <div class="reveal">
+            <h2 class="stitle">Le Lieu & L'Heure</h2>
+            <p class="sdesc">Nous vous attendons avec impatience à partir de <strong>20h00 jusqu'à 01h00</strong> pour célébrer cette union mémorable.</p>
+            
+            <div class="glass-panel" style="text-align:center; padding: 40px; margin-top: 30px;">
+                <h3 style="color:var(--dark); margin-bottom: 10px; font-size: 28px;">Salle Ernam Yoff</h3>
+                <p style="color:#666; margin-bottom: 20px;">Dakar, Sénégal</p>
+                <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3859.5!2d-17.4441!3d14.6928!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMTTCsDQxJzM0LjEiTiAxN8KwMjYnMzguOCJX!5e0!3m2!1sfr!2ssn!4v1" width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                </div>
+                <a href="https://maps.google.com/?q=14.6928,-17.4441" target="_blank" class="btn" style="display:inline-block; text-decoration:none;">Ouvrir dans Google Maps</a>
+            </div>
+        </div>
+    </section>
+
     <!-- GALERIE -->
-    <section class="section" id="galerie">
+    <section class="section section-bg" id="galerie">
         <div class="reveal">
             <h2 class="stitle">Galerie</h2>
             <p class="sdesc">Quelques instants capturés de notre voyage ensemble.</p>
@@ -49,7 +72,7 @@
     </section>
 
     <!-- RSVP -->
-    <section class="section section-bg" id="rsvp">
+    <section class="section" id="rsvp">
         <div class="reveal">
             <h2 class="stitle">Confirmez votre présence</h2>
             <p class="sdesc">Nous serions honorés de vous compter parmi nous pour célébrer ce jour inoubliable à la <strong>Salle Ernam Yoff</strong>.</p>
@@ -76,7 +99,7 @@
     </section>
 
     <!-- LIVRE D'OR -->
-    <section class="section" id="livredor">
+    <section class="section section-bg" id="livredor">
         <div class="reveal">
             <h2 class="stitle">Livre d'or</h2>
             <p class="sdesc">Vos mots doux et vos vœux nous vont droit au cœur.</p>
