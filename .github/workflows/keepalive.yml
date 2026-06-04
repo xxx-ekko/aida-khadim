@@ -1,0 +1,16 @@
+name: Keep Render Awake
+
+on:
+  schedule:
+    # Exécute toutes les 14 minutes pour éviter le sommeil (qui arrive après 15 min d'inactivité)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Permet de le lancer manuellement depuis GitHub si besoin
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Backend
+        run: |
+          curl -s https://mariage-aida-backend.onrender.com/api/messages > /dev/null
+          echo "Ping envoyé avec succès à Render !"

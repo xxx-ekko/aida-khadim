@@ -140,7 +140,7 @@
             <h2 class="stitle">Livre d'or</h2>
             <div id="msg-list" style="max-width:600px;margin:40px auto;display:flex;flex-direction:column;gap:16px;">
                 <!-- Les messages seront injectés ici par le JavaScript depuis le serveur -->
-                <p style="text-align:center;color:var(--muted);padding:32px">Chargement des messages...</p>
+                <p style="text-align:center;color:var(--muted);padding:32px">Pas encore de message.</p>
             </div>
         </section>
     </div>
@@ -229,7 +229,7 @@
             document.getElementById('pno').className = 'pbtn' + (v === 'no' ? ' no-sel' : '');
         }
         
-        async function submitRsvp() {
+        function submitRsvp() {
             const p = document.getElementById('prenom').value.trim();
             const n = document.getElementById('nom').value.trim();
             const msg = document.getElementById('message').value.trim();
@@ -238,31 +238,71 @@
             if (!presence) { toast('Veuillez indiquer votre présence.'); return; }
             
             const btn = document.querySelector('.sbtn');
-            btn.textContent = 'Envoi...';
+            btn.textContent = 'Enregistrement...';
             btn.disabled = true;
 
+            const rsvpData = { prenom: p, nom: n, presence: presence, message: msg };
+            
+            // 1. UI instantanée (on n'attend pas la réponse du serveur)
+            document.getElementById('rsvp-form').style.display = 'none';
+            document.getElementById('rsvp-ok').style.display = 'block';
+            toast(presence === 'yes' ? '🎉 Présence confirmée !' : 'Merci pour votre réponse.');
+            
+            // 2. Ajout optimiste du message dans la liste (s'il y en a un)
+            if (msg) {
+                const msgsList = document.getElementById('msg-list');
+                const newMsgHtml = `
+                <div class="msg-card" style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.03);opacity:0.7">
+                  <div class="msg-head" style="display:flex;align-items:center;margin-bottom:12px">
+                    <div class="msg-av" style="width:36px;height:36px;background:var(--gold);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;margin-right:12px">${ini(p, p)}</div>
+                    <div class="msg-name" style="font-weight:500">${p} (Envoi en cours...)</div>
+                  </div>
+                  <p class="msg-txt" style="color:var(--dark);font-style:italic">"${msg}"</p>
+                </div>`;
+                if (msgsList.innerHTML.includes('Pas encore de message')) {
+                    msgsList.innerHTML = newMsgHtml;
+                } else {
+                    msgsList.insertAdjacentHTML('afterbegin', newMsgHtml);
+                }
+            }
+
+            // 3. Sauvegarde en file d'attente locale et synchronisation
+            saveAndSyncRsvp(rsvpData);
+        }
+
+        // ---- FILE D'ATTENTE LOCALE (Gestion du sommeil de Render) ----
+        function saveAndSyncRsvp(data) {
+            const queue = JSON.parse(localStorage.getItem('rsvp_queue') || '[]');
+            queue.push(data);
+            localStorage.setItem('rsvp_queue', JSON.stringify(queue));
+            syncRsvpQueue();
+        }
+
+        async function syncRsvpQueue() {
+            const queue = JSON.parse(localStorage.getItem('rsvp_queue') || '[]');
+            if (queue.length === 0) return;
+
+            const data = queue[0]; // On prend le premier
             try {
+                // keepalive: true permet à la requête de continuer même si l'utilisateur ferme la page immédiatement
                 const response = await fetch(`${API_URL}/guests`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prenom: p, nom: n, presence: presence, message: msg })
+                    body: JSON.stringify(data),
+                    keepalive: true
                 });
 
                 if (response.ok) {
-                    document.getElementById('rsvp-form').style.display = 'none';
-                    document.getElementById('rsvp-ok').style.display = 'block';
-                    toast(presence === 'yes' ? '🎉 Présence confirmée !' : 'Merci pour votre réponse.');
-                    loadMsgs(); // Recharger les messages pour voir le sien
-                } else {
-                    toast('Erreur lors de l\\'envoi. Réessayez.');
-                    btn.textContent = 'Envoyer ma réponse';
-                    btn.disabled = false;
+                    // Supprimer de la file d'attente
+                    queue.shift();
+                    localStorage.setItem('rsvp_queue', JSON.stringify(queue));
+                    // Recharger la vraie liste des messages (sans le texte "Envoi en cours")
+                    loadMsgs();
+                    // Continuer avec les suivants s'il y en a
+                    syncRsvpQueue();
                 }
             } catch (err) {
-                console.error(err);
-                toast('Erreur de connexion au serveur.');
-                btn.textContent = 'Envoyer ma réponse';
-                btn.disabled = false;
+                console.error("Serveur en sommeil ou hors ligne. L'envoi sera retenté plus tard.", err);
             }
         }
 
@@ -308,6 +348,7 @@
         // ---- INIT ----
         buildGallery();
         loadMsgs();
+        syncRsvpQueue(); // Tente de vider la file d'attente au chargement de la page
         </script>
 </body>
 
