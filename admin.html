@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aïda & Khadim — Backoffice</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400;1,600&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: var(--cream);
+            padding: 40px 20px;
+            font-family: 'Jost', sans-serif;
+            color: var(--dark);
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--gold);
+        }
+        .login-box {
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+            background: var(--cream2);
+        }
+        .sbtn {
+            width: 100%;
+        }
+        #dashboard {
+            display: none;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            flex: 1;
+            background: var(--cream2);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-card h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+        .stat-card p {
+            font-size: 32px;
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--gold);
+            font-weight: 600;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            font-weight: 500;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        tr:hover {
+            background-color: #fcfcfc;
+        }
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge.yes {
+            background: #e6f4ea;
+            color: #1e8e3e;
+        }
+        .badge.no {
+            background: #fce8e6;
+            color: #d93025;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Administration</h1>
+
+    <div class="login-box" id="login-box">
+        <p style="margin-bottom:20px;color:var(--muted)">Veuillez saisir le mot de passe pour accéder à la liste des invités.</p>
+        <input type="password" id="pwd" placeholder="Mot de passe">
+        <button class="sbtn" onclick="login()">Se connecter</button>
+        <p id="login-error" style="color:red;margin-top:16px;display:none;"></p>
+    </div>
+
+    <div id="dashboard">
+        <button class="sbtn" style="width:auto;padding:8px 24px;font-size:14px;margin-bottom:24px;background:var(--muted)" onclick="logout()">Déconnexion</button>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Inscrits</h3>
+                <p id="stat-total">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Présents</h3>
+                <p id="stat-yes">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Absents</h3>
+                <p id="stat-no">0</p>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Prénom</th>
+                        <th>Nom</th>
+                        <th>Présence</th>
+                        <th>Message</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="guests-tbody">
+                    <!-- Data will be injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Si vous testez en local, on utilise localhost. Sinon, on utilise l'URL de Render.
+    const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const API_URL = IS_LOCAL ? 'http://localhost:3000/api' : 'https://votre-backend-mariage.onrender.com/api'; // <--- REMPLACEZ CECI PAR L'URL DE RENDER
+    let currentPwd = '';
+
+    async function login() {
+        const pwd = document.getElementById('pwd').value;
+        const btn = document.querySelector('#login-box .sbtn');
+        const errorEl = document.getElementById('login-error');
+        
+        btn.textContent = 'Connexion...';
+        btn.disabled = true;
+        errorEl.style.display = 'none';
+
+        try {
+            const response = await fetch(`${API_URL}/guests?pwd=${encodeURIComponent(pwd)}`);
+            if (response.ok) {
+                const guests = await response.json();
+                currentPwd = pwd;
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                renderGuests(guests);
+            } else {
+                errorEl.textContent = 'Mot de passe incorrect.';
+                errorEl.style.display = 'block';
+            }
+        } catch (err) {
+            errorEl.textContent = 'Erreur de connexion au serveur.';
+            errorEl.style.display = 'block';
+        }
+
+        btn.textContent = 'Se connecter';
+        btn.disabled = false;
+    }
+
+    function logout() {
+        currentPwd = '';
+        document.getElementById('pwd').value = '';
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('login-box').style.display = 'block';
+    }
+
+    function renderGuests(guests) {
+        let total = guests.length;
+        let yes = 0;
+        let no = 0;
+
+        const tbody = document.getElementById('guests-tbody');
+        tbody.innerHTML = '';
+
+        guests.forEach(g => {
+            if (g.presence === 'yes') yes++;
+            if (g.presence === 'no') no++;
+
+            const date = new Date(g.timestamp).toLocaleString('fr-FR');
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${escapeHtml(g.prenom)}</strong></td>
+                <td><strong>${escapeHtml(g.nom)}</strong></td>
+                <td><span class="badge ${g.presence}">${g.presence === 'yes' ? 'Présent(e)' : 'Absent(e)'}</span></td>
+                <td><em>${escapeHtml(g.message || '-')}</em></td>
+                <td style="color:#888;font-size:13px">${date}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-yes').textContent = yes;
+        document.getElementById('stat-no').textContent = no;
+    }
+
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+    // Allow pressing Enter to login
+    document.getElementById('pwd').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') login();
+    });
+</script>
+
+</body>
+</html>

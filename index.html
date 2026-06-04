@@ -116,6 +116,10 @@
                             <button class="pbtn" id="pno" onclick="setP('no')">✗ Je ne pourrai pas</button>
                         </div>
                     </div>
+                    <div class="field">
+                        <label>Vos mots de cœur (optionnel)</label>
+                        <textarea id="message" rows="3" placeholder="Laissez un message aux mariés..."></textarea>
+                    </div>
                     <button class="sbtn" onclick="submitRsvp()">Envoyer ma réponse</button>
                 </div>
                 <div class="rsvp-ok" id="rsvp-ok">
@@ -125,6 +129,18 @@
                         Merci pour votre réponse !</p>
                     <p style="font-size:13px;color:var(--muted)">Nous avons bien reçu votre confirmation.</p>
                 </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- MESSAGES -->
+    <div id="messages" style="background:var(--cream);padding:80px 24px">
+        <section>
+            <p class="eyebrow">Vos mots de cœur</p>
+            <h2 class="stitle">Livre d'or</h2>
+            <div id="msg-list" style="max-width:600px;margin:40px auto;display:flex;flex-direction:column;gap:16px;">
+                <!-- Les messages seront injectés ici par le JavaScript depuis le serveur -->
+                <p style="text-align:center;color:var(--muted);padding:32px">Chargement des messages...</p>
             </div>
         </section>
     </div>
@@ -201,74 +217,78 @@
         function lbNav(d) { lbIdx = (lbIdx + d + PHOTOS.length) % PHOTOS.length; document.getElementById('lb-img').src = PHOTOS[lbIdx]; }
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); if (e.key === 'ArrowLeft') lbNav(-1); if (e.key === 'ArrowRight') lbNav(1); });
 
-        // ---- RSVP ----
+        // ---- API BACKEND ----
+        // Si vous testez en local, on utilise localhost. Sinon, on utilise l'URL de Render.
+        const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const API_URL = IS_LOCAL ? 'http://localhost:3000/api' : 'https://votre-backend-mariage.onrender.com/api'; // <--- REMPLACEZ CECI PAR L'URL DE RENDER
+
+        // ---- RSVP & MESSAGES API ----
         function setP(v) {
             presence = v;
             document.getElementById('pyes').className = 'pbtn' + (v === 'yes' ? ' yes' : '');
             document.getElementById('pno').className = 'pbtn' + (v === 'no' ? ' no-sel' : '');
         }
-        function submitRsvp() {
+        
+        async function submitRsvp() {
             const p = document.getElementById('prenom').value.trim();
             const n = document.getElementById('nom').value.trim();
+            const msg = document.getElementById('message').value.trim();
+            
             if (!p || !n) { toast('Veuillez entrer votre prénom et nom.'); return; }
             if (!presence) { toast('Veuillez indiquer votre présence.'); return; }
-            const nb = 1;
-            const entry = { prenom: p, nom: n, nb, status: presence === 'yes' ? 'yes' : 'no', time: timeStr() };
-            guests.unshift(entry);
-            saveGuests(guests);
-            document.getElementById('rsvp-form').style.display = 'none';
-            document.getElementById('rsvp-ok').style.display = 'block';
-            toast(presence === 'yes' ? '🎉 Présence confirmée !' : 'Merci pour votre réponse.');
+            
+            const btn = document.querySelector('.sbtn');
+            btn.textContent = 'Envoi...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/guests`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prenom: p, nom: n, presence: presence, message: msg })
+                });
+
+                if (response.ok) {
+                    document.getElementById('rsvp-form').style.display = 'none';
+                    document.getElementById('rsvp-ok').style.display = 'block';
+                    toast(presence === 'yes' ? '🎉 Présence confirmée !' : 'Merci pour votre réponse.');
+                    loadMsgs(); // Recharger les messages pour voir le sien
+                } else {
+                    toast('Erreur lors de l\\'envoi. Réessayez.');
+                    btn.textContent = 'Envoyer ma réponse';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                toast('Erreur de connexion au serveur.');
+                btn.textContent = 'Envoyer ma réponse';
+                btn.disabled = false;
+            }
         }
 
-        // ---- INVITÉS ----
-        function renderGuests() {
-            const list = guests.filter(g => gFilter === 'all' || g.status === gFilter);
-            document.getElementById('cnt-total').textContent = guests.length;
-            document.getElementById('cnt-yes').textContent = guests.filter(g => g.status === 'yes').length;
-            document.getElementById('cnt-wait').textContent = guests.filter(g => g.status === 'wait').length;
-            document.getElementById('guest-list').innerHTML = list.length
-                ? list.map(g => `
-      <div class="gi-item">
-        <div class="av">${ini(g.prenom, g.nom)}</div>
-        <div style="flex:1">
-          <div class="gi-name">${g.prenom} ${g.nom}</div>
-          <div class="gi-sub">${g.time}</div>
-        </div>
-        <span class="bdg bdg-${g.status}">${g.status === 'yes' ? 'Confirmé' : g.status === 'no' ? 'Absent' : 'En attente'}</span>
-      </div>`).join('')
-                : '<p style="text-align:center;color:var(--muted);padding:32px">Aucun invité dans cette catégorie</p>';
+        async function loadMsgs() {
+            try {
+                const response = await fetch(`${API_URL}/messages`);
+                if (response.ok) {
+                    const messages = await response.json();
+                    renderMsgs(messages);
+                }
+            } catch (err) {
+                console.error('Erreur chargement messages', err);
+            }
         }
-        function filt(f, btn) {
-            gFilter = f;
-            document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active'); }
 
-        // ---- MESSAGES ----
-        function renderMsgs() {
-            document.getElementById('msg-list').innerHTML = msgs.length
-                ? msgs.map(m => `
-      <div class="msg-card">
-        <div class="msg-head">
-          <div class="msg-av">${ini(m.prenom, m.nom)}</div>
-          <div class="msg-name">${m.prenom} ${m.nom}</div>
-          <span class="msg-t">${m.time}</span>
+        function renderMsgs(messages) {
+            document.getElementById('msg-list').innerHTML = messages.length
+                ? messages.map(m => `
+      <div class="msg-card" style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+        <div class="msg-head" style="display:flex;align-items:center;margin-bottom:12px">
+          <div class="msg-av" style="width:36px;height:36px;background:var(--gold);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;margin-right:12px">${ini(m.prenom, m.prenom)}</div>
+          <div class="msg-name" style="font-weight:500">${m.prenom}</div>
         </div>
-        <p class="msg-txt">"${m.txt}"</p>
+        <p class="msg-txt" style="color:var(--dark);font-style:italic">"${m.message}"</p>
       </div>`).join('')
-                : '<p style="text-align:center;color:var(--muted);padding:32px">Soyez le premier à laisser un message !</p>';
-        }
-        function submitMsg() {
-            const p = document.getElementById('mprenom').value.trim();
-            const n = document.getElementById('mnom').value.trim();
-            const t = document.getElementById('mtxt').value.trim();
-            if (!p || !n || !t) { toast('Veuillez remplir tous les champs.'); return; }
-            msgs.unshift({ prenom: p, nom: n, txt: t, time: timeStr() });
-            saveMsgs(msgs);
-            document.getElementById('mprenom').value = '';
-            document.getElementById('mnom').value = '';
-            document.getElementById('mtxt').value = '';
-            toast('✦ Message publié !');
+                : '<p style="text-align:center;color:var(--muted);padding:32px">Pas encore de message.</p>';
         }
 
         // ---- TOAST ----
@@ -287,6 +307,7 @@
 
         // ---- INIT ----
         buildGallery();
+        loadMsgs();
         </script>
 </body>
 
