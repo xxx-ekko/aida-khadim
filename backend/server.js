@@ -38,7 +38,7 @@ initDb();
 // API Endpoints
 
 // 1. Submit an RSVP
-app.post('/api/guests', (req, res) => {
+app.post('/api/guests', async (req, res) => {
     const { prenom, nom, presence, message } = req.body;
     
     if (!prenom || !nom || !presence) {
