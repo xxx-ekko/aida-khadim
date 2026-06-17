@@ -25,7 +25,8 @@
             font-family: 'Jost', sans-serif;
             background: var(--cream2);
             color: var(--dark);
-            overflow-x: hidden
+            overflow-x: hidden;
+            animation: siteFadeIn 1.5s ease-out forwards;
         }
 
         /* NAV FIXE */
@@ -866,3 +867,34 @@
         padding: 50px 0;
     }
 }
+
+/* --- SPLASH SCREEN --- */
+.splash {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+  background: var(--cream2); z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  animation: splashFadeOut 1s ease-in-out 2.5s forwards;
+  pointer-events: none;
+}
+.splash img {
+  width: 100px; margin-bottom: 20px;
+  animation: pulse 1.5s infinite alternate;
+}
+.splash h2 {
+  font-family: "Cormorant Garamond", serif;
+  color: var(--gold); font-size: 32px; letter-spacing: 5px;
+  opacity: 0; animation: siteFadeIn 1s ease-out 0.5s forwards;
+}
+
+@keyframes splashFadeOut {
+  to { opacity: 0; visibility: hidden; }
+}
+@keyframes pulse {
+  from { transform: scale(0.9); }
+  to { transform: scale(1.1); }
+}
+@keyframes siteFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
