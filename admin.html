@@ -151,6 +151,7 @@
                         <th>Présence</th>
                         <th>Message</th>
                         <th>Date</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="guests-tbody">
@@ -218,13 +219,17 @@
 
             const date = new Date(g.timestamp).toLocaleString('fr-FR');
             
+            const hiddenStyle = g.is_hidden ? 'text-decoration: line-through; opacity: 0.5;' : '';
+            const actionBtn = g.message ? `<button onclick="toggleMessage(${g.id}, ${g.is_hidden})" style="padding: 4px 8px; font-size: 12px; cursor: pointer; border: 1px solid currentColor; border-radius: 4px; background: transparent; color: ${g.is_hidden ? '#1e8e3e' : '#d93025'}">${g.is_hidden ? 'Afficher' : 'Masquer'}</button>` : '';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${escapeHtml(g.prenom)}</strong></td>
                 <td><strong>${escapeHtml(g.nom)}</strong></td>
                 <td><span class="badge ${g.presence}">${g.presence === 'yes' ? 'Présent(e)' : 'Absent(e)'}</span></td>
-                <td><em>${escapeHtml(g.message || '-')}</em></td>
+                <td style="${hiddenStyle}"><em>${escapeHtml(g.message || '-')}</em></td>
                 <td style="color:#888;font-size:13px">${date}</td>
+                <td>${actionBtn}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -242,6 +247,28 @@
              .replace(/>/g, "&gt;")
              .replace(/"/g, "&quot;")
              .replace(/'/g, "&#039;");
+    }
+
+    async function toggleMessage(id, isHidden) {
+        if (!confirm(isHidden ? 'Voulez-vous réafficher ce message sur le site public ?' : 'Voulez-vous masquer ce message du site public ?')) return;
+
+        try {
+            const response = await fetch(`${API_URL}/guests/${id}/hide?pwd=${encodeURIComponent(currentPwd)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_hidden: !isHidden })
+            });
+
+            if (response.ok) {
+                // On recharge simplement les invités pour mettre à jour l'interface
+                const btn = document.querySelector('#login-box .sbtn');
+                login();
+            } else {
+                alert('Erreur lors de la modification.');
+            }
+        } catch (err) {
+            alert('Erreur de connexion au serveur.');
+        }
     }
 
     // Allow pressing Enter to login

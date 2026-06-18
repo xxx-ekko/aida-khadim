@@ -28,6 +28,7 @@ const initDb = async () => {
             message TEXT,
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
+        await pool.query('ALTER TABLE guests ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT FALSE');
         console.log('Connected to PostgreSQL and guests table is ready.');
     } catch (err) {
         console.error('Error initializing database', err);
@@ -76,8 +77,27 @@ app.get('/api/guests', async (req, res) => {
 // 3. Get all messages (For the public site display)
 app.get('/api/messages', async (req, res) => {
     try {
-        const result = await pool.query("SELECT prenom, message, timestamp FROM guests WHERE message != '' AND message IS NOT NULL ORDER BY timestamp DESC");
+        const result = await pool.query("SELECT prenom, message, timestamp FROM guests WHERE message != '' AND message IS NOT NULL AND is_hidden = FALSE ORDER BY timestamp DESC");
         res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 4. Hide or unhide a message
+app.patch('/api/guests/:id/hide', async (req, res) => {
+    const { pwd } = req.query;
+    const { is_hidden } = req.body;
+    const { id } = req.params;
+    
+    if (pwd !== 'AidaKhadim2026') {
+        return res.status(401).json({ error: 'Accès refusé. Mot de passe incorrect.' });
+    }
+
+    try {
+        await pool.query('UPDATE guests SET is_hidden = $1 WHERE id = $2', [is_hidden, id]);
+        res.json({ message: 'Statut du message mis à jour avec succès.' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });
